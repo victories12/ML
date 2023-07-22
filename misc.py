@@ -2,7 +2,7 @@ import sys
 import time
 
 
-TOTAL_BAR_LENGTH = 80
+TOTAL_BAR_LENGTH = 60
 LAST_T = time.time()
 BEGIN_T = LAST_T
 

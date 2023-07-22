@@ -1,0 +1,11 @@
+.DS_Store
+.vscode/*
+
+__pycache__/
+.ipynb_checkpoints/
+
+data/
+models_noisy/
+tmp.py
+
+
