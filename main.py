@@ -4,6 +4,7 @@ import torch.backends.cudnn as cudnn
 import torchvision
 from torchvision import transforms as transforms
 import numpy as np
+import dill
 
 import argparse
 
@@ -17,7 +18,7 @@ CLASSES = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship'
 def main():
     parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
     parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
-    parser.add_argument('--epoch', default=20, type=int, help='number of epochs tp train for')
+    parser.add_argument('--epoch', default=10, type=int, help='number of epochs tp train for')
     parser.add_argument('--trainBatchSize', default=100, type=int, help='training batch size')
     parser.add_argument('--testBatchSize', default=100, type=int, help='testing batch size')
     parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
@@ -113,7 +114,7 @@ class Solver(object):
 
     def save(self):
         model_out_path = "model.pth"
-        torch.save(self.model, model_out_path)
+        torch.save(self.model, model_out_path,pickle_module=dill)
         print("Checkpoint saved to {}".format(model_out_path))
 
     def run(self):
@@ -122,13 +123,15 @@ class Solver(object):
         accuracy = 0
         for epoch in range(1, self.epochs + 1):
             self.scheduler.step(epoch)
-            print("\n===> epoch: %d/200" % epoch)
+            print(f"\n===> epoch: {epoch}/{self.epochs}")
             train_result = self.train()
             print(train_result)
             test_result = self.test()
             accuracy = max(accuracy, test_result[1])
             if epoch == self.epochs:
                 print("===> BEST ACC. PERFORMANCE: %.3f%%" % (accuracy * 100))
+                with open(f"result_epochs_{self.epochs}.text",'w') as f:
+                    f.write("===> BEST ACC. PERFORMANCE: %.3f%%" % (accuracy * 100))
                 self.save()
 
 
