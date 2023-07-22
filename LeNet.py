@@ -15,10 +15,10 @@ class LeNet(nn.Module):
         self.fc3 = nn.Linear(84, 10)
 
         # Makes some noise xD
-        self.noise_config=default_noise_config
-        # self.noise_config=GaussAddConfig
-        # self.noise_config=GaussMulConfig
-        # self.noise_config=GaussCombinedConfig
+        # self.noise_config=default_noise_config
+        self.noise_config=GaussAddConfig()
+        # self.noise_config=GaussMulConfig()
+        # self.noise_config=GaussCombinedConfig()
         self._noise_operater = NoiseOperator(self.noise_config)
 
     def forward(self, x):
