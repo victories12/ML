@@ -1,12 +1,12 @@
 import torch.nn as nn
 import torch.nn.functional as func
 
-from noise_operator.config import NoNoiseConfig,GaussAddConfig,GaussMulConfig,GaussCombinedConfig
+from noise_operator.config import NoNoiseConfig
 from noise_operator.operators import NoiseOperator
 
 
 class LeNet(nn.Module):
-    def __init__(self, default_noise_config=NoNoiseConfig()):
+    def __init__(self, noise_config=NoNoiseConfig()):
         super(LeNet, self).__init__()
         self.conv1 = nn.Conv2d(3, 6, kernel_size=5)
         self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
@@ -14,12 +14,8 @@ class LeNet(nn.Module):
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
 
-        # Makes some noise xD
-        # self.noise_config=default_noise_config
-        self.noise_config=GaussAddConfig()
-        # self.noise_config=GaussMulConfig()
-        # self.noise_config=GaussCombinedConfig()
-        self._noise_operater = NoiseOperator(self.noise_config)
+        # Makes some noise x
+        self._noise_operater = NoiseOperator(noise_config)
 
     def forward(self, x):
         x = func.relu(self.conv1(x))

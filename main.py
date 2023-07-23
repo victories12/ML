@@ -5,8 +5,12 @@ import torchvision
 from torchvision import transforms as transforms
 import numpy as np
 import dill
+import json
+from datetime import datetime
 
 import argparse
+
+from noise_operator.config import NoNoiseConfig,GaussAddConfig,GaussMulConfig,GaussCombinedConfig
 
 from LeNet import *
 from misc import progress_bar
@@ -14,25 +18,68 @@ from misc import progress_bar
 
 CLASSES = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
+"""
+"NoNoise":0
+"GaussAdd":1
+"GaussMul":2
+"GaussCombined":3
+"""
+noise_types = [0,1]
+
+gauss_stds = [0.01,0.03,0.04,0.06,0.075,0.09,0.1,0.15,0.2,0.4,0.6,0.7,0.8,1.0,5.0,10.0,30.0,60.0,90,100.0]
+
+epochs = 30
 
 def main():
-    parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
-    parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
-    parser.add_argument('--epoch', default=1, type=int, help='number of epochs tp train for')
-    parser.add_argument('--trainBatchSize', default=100, type=int, help='training batch size')
-    parser.add_argument('--testBatchSize', default=100, type=int, help='testing batch size')
-    parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
-    args = parser.parse_args()
+    for noise_type in noise_types:
+        accuracies = []
+        if noise_type==0:
+            print(f"\n#### NoiseType:{noise_type}")
+            parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
+            parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+            parser.add_argument('--epochs', default=epochs, type=int, help='number of epochs tp train for')
+            parser.add_argument('--trainBatchSize', default=100, type=int, help='training batch size')
+            parser.add_argument('--testBatchSize', default=100, type=int, help='testing batch size')
+            parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
 
-    solver = Solver(args)
-    solver.run()
+            parser.add_argument('--noiseConfig', default=NoNoiseConfig(), type=bool, help='no noise')
+            args = parser.parse_args()
+
+            solver = Solver(args)
+            acc = solver.run()
+            accuracies.append({"noise_type":noise_type,"acc":acc,"epochs":epochs})
+
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            with open(f"results_{noise_type}_{timestamp}.json", "w") as f:
+                json.dump(accuracies, f)
+        
+        if noise_type==1:
+            for gauss_std in gauss_stds:
+                print(f"\n#### NoiseType:{noise_type}   GaussStd:{gauss_std}")
+                parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
+                parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
+                parser.add_argument('--epochs', default=epochs, type=int, help='number of epochs tp train for')
+                parser.add_argument('--trainBatchSize', default=100, type=int, help='training batch size')
+                parser.add_argument('--testBatchSize', default=100, type=int, help='testing batch size')
+                parser.add_argument('--cuda', default=torch.cuda.is_available(), type=bool, help='whether cuda is in use')
+                
+                parser.add_argument('--noiseConfig', default=GaussAddConfig(GaussMean=0.0,GaussStd=gauss_std), type=bool, help='gauss add noise')
+                args = parser.parse_args()
+
+                solver = Solver(args)
+                acc = solver.run()
+                accuracies.append({"noise_type":noise_type,"gauss_std":gauss_std,"acc":acc,"epochs":epochs})
+
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            with open(f"results_{noise_type}_{timestamp}.json", "w") as f:
+                json.dump(accuracies, f)
 
 
 class Solver(object):
     def __init__(self, config):
         self.model = None
         self.lr = config.lr
-        self.epochs = config.epoch
+        self.epochs = config.epochs
         self.train_batch_size = config.trainBatchSize
         self.test_batch_size = config.testBatchSize
         self.criterion = None
@@ -42,6 +89,7 @@ class Solver(object):
         self.cuda = config.cuda
         self.train_loader = None
         self.test_loader = None
+        self.noise_config = config.noiseConfig
 
     def load_data(self):
         train_transform = transforms.Compose([transforms.RandomHorizontalFlip(), transforms.ToTensor()])
@@ -58,7 +106,7 @@ class Solver(object):
         else:
             self.device = torch.device('cpu')
 
-        self.model = LeNet().to(self.device)
+        self.model = LeNet(self.noise_config).to(self.device)
 
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         self.scheduler = optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[75, 150], gamma=0.5)
@@ -130,9 +178,8 @@ class Solver(object):
             accuracy = max(accuracy, test_result[1])
             if epoch == self.epochs:
                 print("===> BEST ACC. PERFORMANCE: %.3f%%" % (accuracy * 100))
-                with open(f"result_epochs_{self.epochs}.txt",'w') as f:
-                    f.write("===> BEST ACC. PERFORMANCE: %.3f%%" % (accuracy * 100))
                 self.save()
+                return accuracy
 
 
 if __name__ == '__main__':
