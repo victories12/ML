@@ -34,6 +34,7 @@ def main():
     for noise_type in noise_types:
         accuracies = []
         if noise_type==0:
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             print(f"\n#### NoiseType:{noise_type}")
             parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
             parser.add_argument('--lr', default=0.001, type=float, help='learning rate')
@@ -49,11 +50,11 @@ def main():
             acc = solver.run()
             accuracies.append({"noise_type":noise_type,"acc":acc,"epochs":epochs})
 
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             with open(f"results_{noise_type}_{timestamp}.json", "w") as f:
                 json.dump(accuracies, f)
         
         if noise_type==1:
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             for gauss_std in gauss_stds:
                 print(f"\n#### NoiseType:{noise_type}   GaussStd:{gauss_std}")
                 parser = argparse.ArgumentParser(description="cifar-10 with PyTorch")
@@ -69,10 +70,8 @@ def main():
                 solver = Solver(args)
                 acc = solver.run()
                 accuracies.append({"noise_type":noise_type,"gauss_std":gauss_std,"acc":acc,"epochs":epochs})
-
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            with open(f"results_{noise_type}_{timestamp}.json", "w") as f:
-                json.dump(accuracies, f)
+                with open(f"results_{noise_type}_{timestamp}.json", "w") as f:
+                    json.dump(accuracies, f)
 
 
 class Solver(object):

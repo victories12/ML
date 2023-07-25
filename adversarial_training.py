@@ -5,29 +5,14 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as transforms
 
+import argparse
+
 import numpy as np
 from misc import progress_bar
 
-# LeNet model definition
-class LeNet(nn.Module):
-    def __init__(self):
-        super(LeNet, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, kernel_size=5)
-        self.conv2 = nn.Conv2d(6, 16, kernel_size=5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+from LeNet import *
+from noise_operator.config import NoNoiseConfig,GaussAddConfig,GaussMulConfig,GaussCombinedConfig
 
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2)
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2)
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
 
 # PGD adversarial attack
 def pgd_attack(model, x, y, epsilon, alpha, num_iter):
@@ -95,4 +80,4 @@ train_loader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=Tru
 
 # Training the robust LeNet model using PGD adversarial training
 lenet_model = LeNet()
-train_adversarial(lenet_model, train_loader, epsilon=8/255, alpha=2/255, num_iter=1, num_epochs=30, lr=0.001)
+train_adversarial(lenet_model, train_loader, epsilon=0.05, alpha=0.01, num_iter=1, num_epochs=1, lr=0.001)

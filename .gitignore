@@ -9,5 +9,6 @@ models_noisy/
 tmp.py
 
 *.json
+nohup.out
 
 
